@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>本地H5页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            color: #666;
+            line-height: 1.6;
+        }
+        button {
+            background: #4a69bd;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #1e3799;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        #cameraResult {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #capturedImage {
+            max-width: 100%;
+            max-height: 300px;
+            display: none;
+        }
+        #videoPreview {
+            width: 100%;
+            max-width: 300px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>欢迎使用本地H5页面</h1>
+        <p>这是一个嵌入在Android应用中的本地HTML页面。</p>
+        <p>所有资源都打包在应用中，无需网络连接即可访问。</p>
+        
+        <div class="section">
+            <h2>事件测试</h2>
+            <button onclick="sendEventToAndroid('button_click', '按钮被点击了')">发送事件到Android</button>
+            <button onclick="sendDataToAndroid()">发送数据到Android</button>
+        </div>
+        
+        <div class="section">
+            <h3>通知测试</h3>
+            <button onclick="showAppNotification('普通通知', '这是一条来自H5页面的通知消息')">发送普通通知</button>
+            <button onclick="showAppNotification('重要通知', '您有一条重要消息需要处理')">发送重要通知</button>
+            <button onclick="showAppNotification('系统消息', '系统将在稍后进行维护')">(带标题)发送通知</button>
+        </div>
+        
+        <div class="section">
+            <h3>应用内横幅测试</h3>
+            <button onclick="showBannerNotification('这是一条应用内横幅通知')">显示顶部横幅</button>
+            <button onclick="showBannerNotification('重要提醒：请查看新消息')">显示重要提醒横幅</button>
+            <button onclick="showBannerNotification('系统更新通知：应用将在稍后更新')">显示系统通知横幅</button>
+        </div>
+        
+        <div class="section">
+            <h3>NFC功能测试</h3>
+            <button onclick="triggerNFCScan()">触发NFC扫描</button>
+        </div>
+        
+        <div class="section">
+            <h3>摄像头功能测试</h3>
+            <button onclick="triggerCamera()">调起摄像头拍照</button>
+            <div id="cameraResult">
+                <video id="videoPreview" autoplay playsinline></video>
+                <img id="capturedImage" alt="拍摄的照片">
+                <p id="cameraStatus"></p>
+            </div>
+        </div>
+        
+        <div id="result" style="margin-top: 20px; padding: 10px; background: #e8f4fd; display: none;"></div>
+    </div>
+
+    <script>
+        let stream = null;
+        
+        function sendEventToAndroid(eventType, eventData) {
+            // 发送事件到Android应用
+            if (typeof AndroidInterface !== 'undefined' && AndroidInterface.onCustomEvent) {
+                AndroidInterface.onCustomEvent(eventType, eventData);
+                showResult(`事件已发送: ${eventType} - ${eventData}`);
+            } else {
+                showResult('Android接口不可用，请在Android应用中测试');
+            }
+        }
+        
+        function sendDataToAndroid() {
+            const data = {
+                timestamp: new Date().toISOString(),
+                message: '这是从H5页面发送的数据',
+                type: 'data_transfer'
+            };
+            
+            if (typeof AndroidInterface !== 'undefined' && AndroidInterface.onCustomEvent) {
+                AndroidInterface.onCustomEvent('custom', JSON.stringify(data));
+                showResult(`数据已发送: ${JSON.stringify(data)}`);
+            } else {
+                showResult('Android接口不可用，请在Android应用中测试');
+            }
+        }
+        
+        // 显示应用通知的函数
+        function showAppNotification(title, message) {
+            const notificationData = {
+                action: 'show_notification',
+                title: title,
+                message: message
+            };
+            
+            if (typeof AndroidInterface !== 'undefined' && AndroidInterface.onCustomEvent) {
+                AndroidInterface.onCustomEvent('custom', JSON.stringify(notificationData));
+                showResult(`通知请求已发送: ${title}`);
+            } else {
+                // 如果不在Android环境中，使用浏览器通知作为替代（需要用户授权）
+                if ("Notification" in window) {
+                    if (Notification.permission === "granted") {
+                        new Notification(title, { body: message });
+                    } else if (Notification.permission !== "denied") {
+                        Notification.requestPermission().then(function(permission) {
+                            if (permission === "granted") {
+                                new Notification(title, { body: message });
+                            }
+                        });
+                    }
+                }
+            }
+        }
+        
+        // 显示应用内横幅通知的函数
+        function showBannerNotification(message) {
+            const bannerData = {
+                action: 'show_banner',
+                message: message
+            };
+            
+            if (typeof AndroidInterface !== 'undefined' && AndroidInterface.onCustomEvent) {
+                AndroidInterface.onCustomEvent('custom', JSON.stringify(bannerData));
+                showResult(`横幅通知已发送: ${message}`);
+            } else {
+                // 如果不在Android环境中，使用浏览器通知作为替代
+                alert(`应用内横幅: ${message}`);
+            }
+        }
+        
+        // 触发NFC扫描的函数
+        function triggerNFCScan() {
+            // 发送NFC扫描请求到Android应用
+            if (typeof AndroidInterface !== 'undefined' && AndroidInterface.onCustomEvent) {
+                const nfcData = {
+                    action: 'trigger_nfc_scan',
+                    message: '请求启动NFC扫描'
+                };
+                
+                AndroidInterface.onCustomEvent('custom', JSON.stringify(nfcData));
+                showResult('NFC扫描请求已发送');
+            } else {
+                alert('此功能仅在Android应用中可用');
+            }
+        }
+        
+        // 触发摄像头的函数
+        function triggerCamera() {
+            // 尝试使用Web API调用摄像头
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                // 在浏览器环境中，使用Web API
+                const video = document.getElementById('videoPreview');
+                const status = document.getElementById('cameraStatus');
+                
+                status.textContent = '正在启动摄像头...';
+                
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function(s) {
+                        stream = s;
+                        video.srcObject = stream;
+                        video.style.display = 'block';
+                        
+                        // 添加拍照按钮
+                        if (!document.getElementById('captureButton')) {
+                            const captureBtn = document.createElement('button');
+                            captureBtn.id = 'captureButton';
+                            captureBtn.textContent = '拍照';
+                            captureBtn.onclick = captureImage;
+                            captureBtn.style.marginTop = '10px';
+                            video.parentNode.appendChild(captureBtn);
+                        }
+                        
+                        status.textContent = '摄像头已启动，点击拍照按钮';
+                    })
+                    .catch(function(err) {
+                        console.error("无法访问摄像头: ", err);
+                        status.textContent = '无法访问摄像头，尝试调用原生摄像头';
+                        
+                        // 在Android WebView中，尝试调用原生摄像头
+                        if (typeof AndroidInterface !== 'undefined' && AndroidInterface.onCustomEvent) {
+                            const cameraData = {
+                                action: 'trigger_camera',
+                                message: '请求启动原生摄像头'
+                            };
+                            
+                            AndroidInterface.onCustomEvent('custom', JSON.stringify(cameraData));
+                            status.textContent = '已请求原生摄像头';
+                        } else {
+                            status.textContent = '摄像头功能不可用';
+                        }
+                    });
+            } else {
+                // 在Android环境中，直接调用原生摄像头功能
+                if (typeof AndroidInterface !== 'undefined' && AndroidInterface.onCustomEvent) {
+                    const cameraData = {
+                        action: 'trigger_camera',
+                        message: '请求启动原生摄像头'
+                    };
+                    
+                    AndroidInterface.onCustomEvent('custom', JSON.stringify(cameraData));
+                    document.getElementById('cameraStatus').textContent = '已请求原生摄像头';
+                } else {
+                    alert('此功能仅在Android应用中可用');
+                }
+            }
+        }
+        
+        // 拍照函数
+        function captureImage() {
+            if (stream) {
+                const video = document.getElementById('videoPreview');
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0);
+                
+                // 显示拍摄的图片
+                const img = document.getElementById('capturedImage');
+                img.src = canvas.toDataURL('image/png');
+                img.style.display = 'block';
+                
+                // 停止摄像头
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+                video.style.display = 'none';
+                
+                document.getElementById('cameraStatus').textContent = '照片已拍摄';
+                
+                // 隐藏拍照按钮
+                const captureBtn = document.getElementById('captureButton');
+                if (captureBtn) {
+                    captureBtn.style.display = 'none';
+                }
+            }
+        }
+        
+        // 从Android接收图片的函数
+        function receiveCapturedImage(imageData) {
+            const img = document.getElementById('capturedImage');
+            img.src = imageData;
+            img.style.display = 'block';
+            document.getElementById('cameraStatus').textContent = '照片已接收';
+        }
+        
+        function showResult(message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<p>${message}</p>`;
+            resultDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                resultDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('本地H5页面加载完成');
+            
+            // 如果在Android WebView中，通知应用页面已加载
+            if (typeof AndroidInterface !== 'undefined' && AndroidInterface.onCustomEvent) {
+                AndroidInterface.onCustomEvent('page_loaded', 'local_page.html');
+            }
+            
+            // 请求浏览器通知权限（仅在非Android环境中有效）
+            if (typeof AndroidInterface === 'undefined' && "Notification" in window) {
+                Notification.requestPermission();
+            }
+        });
+    </script>
+</body>
+</html>
