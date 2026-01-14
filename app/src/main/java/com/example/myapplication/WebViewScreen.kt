@@ -9,17 +9,38 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 
-// JavaScript接口类，用于处理WebView中的事件
+/**
+ * JavaScript接口类，用于处理WebView中的事件
+ * 允许H5页面与Android原生应用进行通信
+ *
+ * @param context 上下文对象
+ * @param onEvent 事件回调函数
+ */
 class WebAppInterface(
     private val context: Context,
     private val onEvent: (String, String) -> Unit  // 事件回调
 ) {
+    /**
+     * 供H5页面调用的JavaScript接口方法
+     * @param eventType 事件类型
+     * @param eventData 事件数据
+     */
     @android.webkit.JavascriptInterface
     fun onCustomEvent(eventType: String, eventData: String) {
         onEvent(eventType, eventData)
     }
 }
 
+/**
+ * H5页面WebView组件
+ * 用于在Compose UI中嵌入和显示H5页面
+ *
+ * @param url 远程URL地址（可选）
+ * @param localAssetFileName 本地资产文件名（可选）
+ * @param modifier Compose修饰符
+ * @param onWebViewEvent WebView事件回调
+ * @param onWebViewCreated WebView创建完成回调
+ */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun H5PageWebView(
