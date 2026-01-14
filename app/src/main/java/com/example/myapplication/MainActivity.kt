@@ -3,6 +3,7 @@ package com.example.myapplication
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -26,12 +27,19 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import kotlinx.coroutines.delay
 
+/**
+ * 主Activity类，负责应用的主要UI展示和功能协调
+ * 包含WebView显示H5页面、NFC功能、相机功能、通知功能等
+ */
 class MainActivity : ComponentActivity() {
     private lateinit var nfcManager: NFCManager
     private lateinit var cameraManager: CameraManager
     private var nfcStatusCallback: ((String) -> Unit)? = null
     private var webViewRef: android.webkit.WebView? = null
     
+    /**
+     * Activity创建时的初始化方法
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         nfcManager = NFCManager(this)
@@ -114,7 +122,7 @@ class MainActivity : ComponentActivity() {
                             
                             Spacer(modifier = Modifier.height(16.dp))
                             
-                            // WebView组件
+                            // WebView组件 - 显示H5页面
                             H5PageWebView(
                                 localAssetFileName = "local_page.html", // 加载本地页面
                                 modifier = Modifier
@@ -246,16 +254,25 @@ class MainActivity : ComponentActivity() {
         }
     }
     
+    /**
+     * Activity恢复时调用，启用NFC前台调度
+     */
     override fun onResume() {
         super.onResume()
         nfcManager.enableNFCForegroundDispatch()
     }
     
+    /**
+     * Activity暂停时调用，禁用NFC前台调度
+     */
     override fun onPause() {
         super.onPause()
         nfcManager.disableNFCForegroundDispatch()
     }
     
+    /**
+     * 处理NFC新意图，接收NFC标签数据
+     */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         nfcManager.handleNfcIntent(intent) { nfcData ->
@@ -273,6 +290,9 @@ class MainActivity : ComponentActivity() {
         }
     }
     
+    /**
+     * 处理权限请求结果
+     */
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -304,6 +324,9 @@ class MainActivity : ComponentActivity() {
         }
     }
     
+    /**
+     * 处理相机拍照结果，将拍摄的图片传递给H5页面
+     */
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         
@@ -338,7 +361,9 @@ class MainActivity : ComponentActivity() {
         }
     }
     
-    // 解析H5传来的事件数据
+    /**
+     * 解析H5传来的事件数据
+     */
     private fun parseEventData(data: String): Map<String, String> {
         // 简单解析键值对格式的数据
         return if (data.startsWith("{")) {
