@@ -34,6 +34,7 @@ import kotlinx.coroutines.delay
 class MainActivity : ComponentActivity() {
     private lateinit var nfcManager: NFCManager
     private lateinit var cameraManager: CameraManager
+    private lateinit var qrCodeScannerManager: QRCodeScannerManager
     private var nfcStatusCallback: ((String) -> Unit)? = null
     private var webViewRef: android.webkit.WebView? = null
     
@@ -44,6 +45,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         nfcManager = NFCManager(this)
         cameraManager = CameraManager(this)
+        qrCodeScannerManager = QRCodeScannerManager(this)
         
         // 创建通知渠道
         NotificationHelper.createNotificationChannel(this)
@@ -178,6 +180,10 @@ class MainActivity : ComponentActivity() {
                                                     "trigger_camera" -> {
                                                         // 处理来自H5页面的摄像头请求
                                                         cameraManager.captureImage()
+                                                    }
+                                                    "scan_qr_code" -> {
+                                                        // 处理来自H5页面的二维码扫描请求
+                                                        qrCodeScannerManager.startQRCodeScan()
                                                     }
                                                 }
                                             } catch (e: Exception) {
@@ -357,6 +363,28 @@ class MainActivity : ComponentActivity() {
                         }
                     }, 1000) // 延迟1秒执行，确保页面完全加载
                 }
+            }
+        }
+        
+        // 处理二维码扫描结果
+        val qrCodeResult = qrCodeScannerManager.handleResult(requestCode, resultCode, data)
+        if (qrCodeResult != null) {
+            runOnUiThread {
+                // 使用延迟机制确保WebView引用已设置
+                Handler(mainLooper).postDelayed({
+                    webViewRef?.let { webView ->
+                        // 确保页面已加载后再执行JavaScript
+                        webView.post {
+                            // 将二维码扫描结果传递给H5页面的函数
+                            val escapedResult = qrCodeResult.replace("'", "\\'")
+                            val jsCode = "javascript:receiveQRCodeResult('$escapedResult')"
+                            webView.loadUrl(jsCode)
+                        }
+                    } ?: run {
+                        // 如果webViewRef仍然为null，记录错误
+                        Log.e("MainActivity", "WebView reference is still null after delay when handling QR code")
+                    }
+                }, 1000) // 延迟1秒执行，确保页面完全加载
             }
         }
     }

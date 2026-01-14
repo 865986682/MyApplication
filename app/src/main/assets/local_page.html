@@ -93,6 +93,12 @@
         </div>
         
         <div class="section">
+            <h3>二维码扫描功能</h3>
+            <button onclick="scanQRCode()">扫描二维码</button>
+            <div id="qrResult" style="margin-top: 10px; padding: 10px; background: #e8f4fd; display: none;"></div>
+        </div>
+        
+        <div class="section">
             <h3>摄像头功能测试</h3>
             <button onclick="triggerCamera()">调起摄像头拍照</button>
             <div id="cameraResult">
@@ -174,6 +180,45 @@
                 // 如果不在Android环境中，使用浏览器通知作为替代
                 alert(`应用内横幅: ${message}`);
             }
+        }
+        
+        // 扫描二维码的函数
+        function scanQRCode() {
+            // 发送二维码扫描请求到Android应用
+            if (typeof AndroidInterface !== 'undefined' && AndroidInterface.onCustomEvent) {
+                const qrData = {
+                    action: 'scan_qr_code',
+                    message: '请求启动二维码扫描'
+                };
+                
+                AndroidInterface.onCustomEvent('custom', JSON.stringify(qrData));
+                showQRResult('二维码扫描请求已发送');
+            } else {
+                alert('此功能仅在Android应用中可用');
+            }
+        }
+        
+        // 显示二维码扫描结果的函数
+        function showQRResult(message) {
+            const resultDiv = document.getElementById('qrResult');
+            resultDiv.innerHTML = `<p>${message}</p>`;
+            resultDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                resultDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // 从Android接收二维码扫描结果的函数
+        function receiveQRCodeResult(result) {
+            const resultDiv = document.getElementById('qrResult');
+            resultDiv.innerHTML = `<p>扫描结果: ${result}</p>`;
+            resultDiv.style.display = 'block';
+            
+            // 5秒后自动隐藏结果
+            setTimeout(() => {
+                resultDiv.style.display = 'none';
+            }, 5000);
         }
         
         // 触发NFC扫描的函数
