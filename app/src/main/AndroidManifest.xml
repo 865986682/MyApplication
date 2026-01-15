@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" >
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -24,19 +24,19 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.MyApplication" >
+        android:theme="@style/Theme.MyApplication">
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.MyApplication"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.MyApplication">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            
+
             <!-- NFC Intent Filters -->
             <intent-filter>
                 <action android:name="android.nfc.action.NDEF_DISCOVERED" />
@@ -50,11 +50,18 @@
             <intent-filter>
                 <action android:name="android.nfc.action.TECH_DISCOVERED" />
             </intent-filter>
-            
+
             <meta-data
                 android:name="android.nfc.action.TECH_DISCOVERED"
                 android:resource="@xml/nfc_tech_filter" />
         </activity>
+
+        <!-- 自定义二维码扫描Activity -->
+        <activity
+            android:name=".CustomCaptureActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/CustomCaptureTheme" />
     </application>
 
 </manifest>

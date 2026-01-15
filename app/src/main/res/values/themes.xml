@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.MyApplication" parent="android:Theme.Material.Light.NoActionBar" />
+    
+    <!-- 自定义二维码扫描主题，适配竖屏 -->
+    <style name="CustomCaptureTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="colorPrimaryDark">#000000</item>
+        <item name="android:windowBackground">#000000</item>
+        <item name="colorAccent">#FF6200EE</item>
+        <item name="colorPrimary">#3F51B5</item>
+    </style>
 </resources>
