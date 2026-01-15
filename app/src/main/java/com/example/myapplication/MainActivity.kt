@@ -97,30 +97,30 @@ class MainActivity : ComponentActivity() {
                                 .fillMaxSize()
                                 .padding(innerPadding)
                         ) {
-                            // NFC按钮
-                            Button(
-                                onClick = {
-                                    if (nfcManager.isNFCAvailable()) {
-                                        nfcStatus = "请将手机靠近NFC标签"
-                                        // 启用NFC前台调度
-                                        nfcManager.enableNFCForegroundDispatch()
-                                    } else {
-                                        nfcStatus = "NFC不可用或未启用"
-                                    }
-                                },
-                                modifier = Modifier
-                                    .padding(16.dp)
-                                    .fillMaxWidth()
-                            ) {
-                                Text("点击扫描NFC")
-                            }
-                            
-                            Text(
-                                text = nfcStatus,
-                                modifier = Modifier
-                                    .padding(horizontal = 16.dp)
-                                    .fillMaxWidth()
-                            )
+//                            // NFC按钮
+//                            Button(
+//                                onClick = {
+//                                    if (nfcManager.isNFCAvailable()) {
+//                                        nfcStatus = "请将手机靠近NFC标签 (5秒后自动停止)"
+//                                        // 启用带5秒超时的NFC前台调度
+//                                        nfcManager.enableNFCForegroundDispatchWithTimeout(5000)
+//                                    } else {
+//                                        nfcStatus = "NFC不可用或未启用"
+//                                    }
+//                                },
+//                                modifier = Modifier
+//                                    .padding(16.dp)
+//                                    .fillMaxWidth()
+//                            ) {
+//                                Text("点击扫描NFC")
+//                            }
+
+//                            Text(
+//                                text = nfcStatus,
+//                                modifier = Modifier
+//                                    .padding(horizontal = 16.dp)
+//                                    .fillMaxWidth()
+//                            )
                             
                             Spacer(modifier = Modifier.height(16.dp))
                             
@@ -171,8 +171,8 @@ class MainActivity : ComponentActivity() {
                                                     "trigger_nfc_scan" -> {
                                                         // 处理来自H5页面的NFC扫描请求
                                                         if (nfcManager.isNFCAvailable()) {
-                                                            nfcStatus = "H5页面请求：请将手机靠近NFC标签"
-                                                            nfcManager.enableNFCForegroundDispatch()
+                                                            nfcStatus = "H5页面请求：请将手机靠近NFC标签 (5秒后自动停止)"
+                                                            nfcManager.enableNFCForegroundDispatchWithTimeout(5000)
                                                         } else {
                                                             nfcStatus = "设备不支持NFC或NFC未启用"
                                                         }
@@ -265,7 +265,8 @@ class MainActivity : ComponentActivity() {
      */
     override fun onResume() {
         super.onResume()
-        nfcManager.enableNFCForegroundDispatch()
+        // 使用带超时的NFC前台调度
+//        nfcManager.enableNFCForegroundDispatchWithTimeout(5000)
     }
     
     /**
@@ -425,18 +426,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     MyApplicationTheme {
-        Greeting("呵呵")
     }
 }
