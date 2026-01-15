@@ -25,7 +25,7 @@ class WebAppInterface(
      * @param eventType 事件类型
      * @param eventData 事件数据
      */
-    @android.webkit.JavascriptInterface
+    @JavascriptInterface
     fun onCustomEvent(eventType: String, eventData: String) {
         onEvent(eventType, eventData)
     }
@@ -49,7 +49,7 @@ fun H5PageWebView(
     modifier: Modifier = Modifier,
     onWebViewEvent: (String, String) -> Unit = { _, _ -> },  // 新增事件回调参数
     // 添加一个回调函数，允许外部调用JavaScript
-    onWebViewCreated: (android.webkit.WebView) -> Unit = {}
+    onWebViewCreated: (WebView) -> Unit = {}
 ) {
     AndroidView(
         factory = { context ->

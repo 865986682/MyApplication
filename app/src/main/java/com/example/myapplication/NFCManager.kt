@@ -11,12 +11,16 @@ import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.nfc.tech.Ndef
 import android.os.Parcelable
+import android.os.Handler
+import android.os.Looper
 import java.nio.charset.Charset
 
 class NFCManager(private val activity: Activity) {
     private var nfcAdapter: NfcAdapter? = null
     private var pendingIntent: PendingIntent? = null
     private var intentFilters: Array<IntentFilter>? = null
+    private var nfcTimeoutHandler: Handler? = null
+    private var nfcTimeoutRunnable: Runnable? = null
 
     init {
         nfcAdapter = NfcAdapter.getDefaultAdapter(activity)
@@ -51,9 +55,29 @@ class NFCManager(private val activity: Activity) {
         }
     }
 
+    fun enableNFCForegroundDispatchWithTimeout(timeoutMs: Long = 5000) {
+        if (nfcAdapter != null) {
+            nfcAdapter?.enableForegroundDispatch(activity, pendingIntent, intentFilters, null)
+            
+            // 清除之前的超时任务
+            nfcTimeoutHandler?.removeCallbacks(nfcTimeoutRunnable ?: return)
+            
+            // 创建新的超时任务
+            nfcTimeoutRunnable = Runnable {
+                disableNFCForegroundDispatch()
+            }
+            nfcTimeoutHandler = Handler(Looper.getMainLooper())
+            nfcTimeoutHandler?.postDelayed(nfcTimeoutRunnable!!, timeoutMs)
+        }
+    }
+
     fun disableNFCForegroundDispatch() {
         try {
             nfcAdapter?.disableForegroundDispatch(activity)
+            // 取消超时任务
+            nfcTimeoutRunnable?.let {
+                nfcTimeoutHandler?.removeCallbacks(it)
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
