@@ -93,7 +93,7 @@ fun H5PageWebView(
                 settings.javaScriptCanOpenWindowsAutomatically = true
                 
                 // 启用跨域请求
-                settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+                settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                 
                 // 其他设置
                 settings.useWideViewPort = true
