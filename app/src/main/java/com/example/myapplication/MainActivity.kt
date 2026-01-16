@@ -97,31 +97,6 @@ class MainActivity : ComponentActivity() {
                                 .fillMaxSize()
                                 .padding(innerPadding)
                         ) {
-//                            // NFC按钮
-//                            Button(
-//                                onClick = {
-//                                    if (nfcManager.isNFCAvailable()) {
-//                                        nfcStatus = "请将手机靠近NFC标签 (5秒后自动停止)"
-//                                        // 启用带5秒超时的NFC前台调度
-//                                        nfcManager.enableNFCForegroundDispatchWithTimeout(5000)
-//                                    } else {
-//                                        nfcStatus = "NFC不可用或未启用"
-//                                    }
-//                                },
-//                                modifier = Modifier
-//                                    .padding(16.dp)
-//                                    .fillMaxWidth()
-//                            ) {
-//                                Text("点击扫描NFC")
-//                            }
-
-//                            Text(
-//                                text = nfcStatus,
-//                                modifier = Modifier
-//                                    .padding(horizontal = 16.dp)
-//                                    .fillMaxWidth()
-//                            )
-                            
                             Spacer(modifier = Modifier.height(16.dp))
                             
                             // WebView组件 - 显示H5页面
