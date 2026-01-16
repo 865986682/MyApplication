@@ -3,8 +3,8 @@ package com.example.myapplication
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
-import android.os.Looper
 import android.util.Log
+import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -12,18 +12,37 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import kotlinx.coroutines.delay
 
@@ -97,31 +116,6 @@ class MainActivity : ComponentActivity() {
                                 .fillMaxSize()
                                 .padding(innerPadding)
                         ) {
-//                            // NFC按钮
-//                            Button(
-//                                onClick = {
-//                                    if (nfcManager.isNFCAvailable()) {
-//                                        nfcStatus = "请将手机靠近NFC标签 (5秒后自动停止)"
-//                                        // 启用带5秒超时的NFC前台调度
-//                                        nfcManager.enableNFCForegroundDispatchWithTimeout(5000)
-//                                    } else {
-//                                        nfcStatus = "NFC不可用或未启用"
-//                                    }
-//                                },
-//                                modifier = Modifier
-//                                    .padding(16.dp)
-//                                    .fillMaxWidth()
-//                            ) {
-//                                Text("点击扫描NFC")
-//                            }
-
-//                            Text(
-//                                text = nfcStatus,
-//                                modifier = Modifier
-//                                    .padding(horizontal = 16.dp)
-//                                    .fillMaxWidth()
-//                            )
-                            
                             Spacer(modifier = Modifier.height(16.dp))
                             
                             // WebView组件 - 显示H5页面
@@ -422,6 +416,21 @@ class MainActivity : ComponentActivity() {
                 }
             }
             map
+        }
+    }
+    
+    /**
+     * 重写返回按钮事件，实现WebView页面返回功能
+     */
+    override fun onBackPressed() {
+        webViewRef?.let { webView ->
+            if (webView.canGoBack()) {
+                webView.goBack()
+            } else {
+                super.onBackPressed()
+            }
+        } ?: run {
+            super.onBackPressed()
         }
     }
 }

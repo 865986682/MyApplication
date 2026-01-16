@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            color: #666;
+            line-height: 1.6;
+        }
+        button {
+            background: #4a69bd;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #1e3799;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            background: #e8f4fd;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>新页面</h1>
+    <p>欢迎来到新页面！这是一个嵌入在Android应用中的新HTML页面。</p>
+    
+    <div class="section">
+        <h2>导航功能</h2>
+        <a href="local_page.html"><button>返回主页</button></a>
+        <button onclick="showResult('你正在新页面上')">测试功能</button>
+    </div>
+
+    <div class="section">
+        <h2>与原生应用交互</h2>
+        <button onclick="triggerNotification('新页面通知', '来自新页面的消息')">发送通知</button>
+        <button onclick="triggerBanner('来自新页面的横幅消息')">显示横幅</button>
+    </div>
+
+    <div id="result"></div>
+</div>
+
+<script>
+
+
+    function triggerNotification(title, message) {
+        const notificationData = {
+            action: 'show_notification',
+            title: title,
+            message: message
+        };
+
+        if (typeof AndroidInterface !== 'undefined' && AndroidInterface.onCustomEvent) {
+            AndroidInterface.onCustomEvent('custom', JSON.stringify(notificationData));
+            showResult(`通知请求已发送: ${title}`);
+        } else {
+            if ("Notification" in window) {
+                if (Notification.permission === "granted") {
+                    new Notification(title, { body: message });
+                } else if (Notification.permission !== "denied") {
+                    Notification.requestPermission().then(function(permission) {
+                        if (permission === "granted") {
+                            new Notification(title, { body: message });
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    function triggerBanner(message) {
+        const bannerData = {
+            action: 'show_banner',
+            message: message
+        };
+
+        if (typeof AndroidInterface !== 'undefined' && AndroidInterface.onCustomEvent) {
+            AndroidInterface.onCustomEvent('custom', JSON.stringify(bannerData));
+            showResult(`横幅通知已发送: ${message}`);
+        } else {
+            alert(`应用内横幅: ${message}`);
+        }
+    }
+
+    function showResult(message) {
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = `<p>${message}</p>`;
+        resultDiv.style.display = 'block';
+
+        setTimeout(() => {
+            resultDiv.style.display = 'none';
+        }, 5000);
+    }
+
+    // 页面加载完成后的初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('新页面加载完成');
+
+        // 如果在Android WebView中，通知应用页面已加载
+        if (typeof AndroidInterface !== 'undefined' && AndroidInterface.onCustomEvent) {
+            AndroidInterface.onCustomEvent('page_loaded', 'new_page.html');
+        }
+    });
+</script>
+</body>
+</html>
