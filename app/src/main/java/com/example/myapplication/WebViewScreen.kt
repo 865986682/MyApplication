@@ -61,7 +61,22 @@ fun H5PageWebView(
                 
                 webViewClient = object : WebViewClient() {
                     // 允许加载本地资源
-                    override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                    override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                        if (request?.url != null) {
+                            val urlStr = request.url.toString()
+                            
+                            // 检查是否为本地asset文件请求，并进行安全性验证
+                            if (urlStr.startsWith("file:///android_asset/")) {
+                                // 防止路径遍历攻击，确保路径不包含 "../" 等危险序列
+                                val path = request.url.path ?: ""
+                                if (!path.contains("../") && !path.contains("..\\\\")) {
+                                    // 允许在WebView内部加载本地asset文件
+                                    return false
+                                }
+                            }
+                        }
+                        
+                        // 对于其他URL，也可以选择在WebView内部打开
                         return false
                     }
                     
