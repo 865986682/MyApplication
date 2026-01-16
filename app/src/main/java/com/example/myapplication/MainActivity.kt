@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
+import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -415,6 +416,21 @@ class MainActivity : ComponentActivity() {
                 }
             }
             map
+        }
+    }
+    
+    /**
+     * 重写返回按钮事件，实现WebView页面返回功能
+     */
+    override fun onBackPressed() {
+        webViewRef?.let { webView ->
+            if (webView.canGoBack()) {
+                webView.goBack()
+            } else {
+                super.onBackPressed()
+            }
+        } ?: run {
+            super.onBackPressed()
         }
     }
 }
