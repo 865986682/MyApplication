@@ -358,8 +358,7 @@ class MainActivity : ComponentActivity() {
                             // 确保页面已加载后再执行JavaScript
                             webView.post {
                                 // 将图片数据作为Base64字符串传递给H5页面的函数
-                                val jsCode = "javascript:receiveCapturedImage('$imageData')"
-                                webView.loadUrl(jsCode)
+                                webView.evaluateJavascript("receiveCapturedImage('$imageData')", null)
                             }
                         } ?: run {
                             // 如果webViewRef仍然为null，记录错误
