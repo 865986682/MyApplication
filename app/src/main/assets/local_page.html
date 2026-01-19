@@ -53,11 +53,53 @@
             max-width: 100%;
             max-height: 300px;
             display: none;
+            cursor: pointer; /* 添加手型光标表示可点击 */
         }
         #videoPreview {
             width: 100%;
             max-width: 300px;
             display: none;
+        }
+        
+        /* 图片放大模态框样式 */
+        .modal {
+            display: none; /* 默认隐藏 */
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8); /* 半透明黑色背景 */
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            max-width: 90%;
+            max-height: 90%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .close {
+            position: absolute;
+            top: 20px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            z-index: 1001;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #bbb;
+            text-decoration: none;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -113,6 +155,12 @@
             <video id="videoPreview" autoplay playsinline></video>
             <img id="capturedImage" alt="拍摄的照片">
             <p id="cameraStatus"></p>
+        </div>
+        
+        <!-- 图片放大模态框 -->
+        <div id="imageModal" class="modal">
+            <span class="close">&times;</span>
+            <img class="modal-content" id="modalImage">
         </div>
     </div>
 
@@ -347,6 +395,41 @@
         img.style.display = 'block';
         document.getElementById('cameraStatus').textContent = '照片已接收';
     }
+    
+    // 图片放大查看功能
+    function initImageModal() {
+        const capturedImg = document.getElementById('capturedImage');
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImage');
+        const span = document.querySelector('.close');
+
+        // 点击图片时显示模态框
+        capturedImg.onclick = function() {
+            if (this.style.display !== 'none' && this.src) {
+                modal.style.display = 'block';
+                modalImg.src = this.src;
+            }
+        }
+
+        // 点击×号关闭模态框
+        span.onclick = function() {
+            modal.style.display = 'none';
+        }
+
+        // 点击模态框外部区域关闭
+        modal.onclick = function(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // 按ESC键关闭模态框
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && modal.style.display === 'block') {
+                modal.style.display = 'none';
+            }
+        });
+    }
 
     function showResult(message) {
         const resultDiv = document.getElementById('result');
@@ -371,6 +454,9 @@
         if (typeof AndroidInterface === 'undefined' && "Notification" in window) {
             Notification.requestPermission();
         }
+        
+        // 初始化图片模态框功能
+        initImageModal();
     });
 </script>
 </body>

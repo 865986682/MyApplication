@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
-import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -315,11 +314,21 @@ class MainActivity : ComponentActivity() {
                 if (grantResults.isNotEmpty() && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
                     // 权限被授予，可以使用相机
                     Log.d("Camera", "相机权限已授予")
-                    cameraManager.captureImage()
+                    // 延迟执行相机功能，确保权限完全生效
+                    Handler(mainLooper).postDelayed({
+                        cameraManager.captureImage()
+                    }, 500)
                 } else {
                     // 权限被拒绝
                     Log.d("Camera", "相机权限被拒绝")
-
+                    // 提示用户手动开启权限
+                    runOnUiThread {
+                        NotificationHelper.showHeadsUpNotification(
+                            this@MainActivity,
+                            "权限被拒绝",
+                            "需要相机权限才能使用拍照功能，请在设置中手动开启"
+                        )
+                    }
                 }
             }
         }
