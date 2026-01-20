@@ -4,15 +4,12 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -129,28 +126,12 @@ class CameraManager(private val activity: Activity) {
                     val fileBytes = inputStream.readBytes()
                     inputStream.close()
                     
-                    // 限制图片大小，如果超过2MB则压缩
-                    var bytes = fileBytes
-                    if (bytes.size > 2 * 1024 * 1024) { // 2MB
-                        // 压缩图片
-                        val bitmap = BitmapFactory.decodeByteArray(fileBytes, 0, fileBytes.size)
-                        val outputStream = ByteArrayOutputStream()
-                        
-                        // 计算压缩比例
-                        var quality = 80
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
-                        bytes = outputStream.toByteArray()
-                        
-                        // 继续压缩直到大小合适
-                        while (bytes.size > 2 * 1024 * 1024 && quality > 20) {
-                            outputStream.reset()
-                            quality -= 10
-                            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
-                            bytes = outputStream.toByteArray()
-                        }
+                    // 检查文件大小，如果超过WebView限制则给出警告
+                    if (fileBytes.size > 2 * 1024 * 1024) { // 2MB limit
+                        android.util.Log.w("CameraManager", "图片文件过大 (${fileBytes.size} 字节)，可能导致WebView加载失败")
                     }
                     
-                    val base64String = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+                    val base64String = android.util.Base64.encodeToString(fileBytes, android.util.Base64.NO_WRAP)
                     return "data:image/jpeg;base64,$base64String"
                 } catch (e: Exception) {
                     e.printStackTrace()
