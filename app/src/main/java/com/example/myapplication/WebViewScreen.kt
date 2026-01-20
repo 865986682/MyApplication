@@ -2,6 +2,8 @@ package com.example.myapplication
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.view.ViewGroup
 import android.webkit.*
 import androidx.compose.foundation.layout.fillMaxSize
@@ -62,17 +64,49 @@ fun H5PageWebView(
                 webViewClient = object : WebViewClient() {
                     // 允许加载本地资源
                     override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                        if (request?.url != null) {
-                            val urlStr = request.url.toString()
-                            
-                            // 检查是否为本地asset文件请求，并进行安全性验证
-                            if (urlStr.startsWith("file:///android_asset/")) {
-                                // 防止路径遍历攻击，确保路径不包含 "../" 等危险序列
-                                val path = request.url.path ?: ""
-                                if (!path.contains("../") && !path.contains("..\\\\")) {
-                                    // 允许在WebView内部加载本地asset文件
-                                    return false
-                                }
+                        val url = request?.url.toString()
+                        
+                        // 处理电话链接
+                        if (url.startsWith("tel:")) {
+                            try {
+                                val intent = Intent(Intent.ACTION_DIAL, Uri.parse(url))
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                // 如果没有找到合适的拨号应用，提示用户
+                                onWebViewEvent("error", "Could not open dialer: ${e.message}")
+                            }
+                            return true // 表示已经处理了该URL
+                        }
+                        
+                        // 处理短信链接
+                        if (url.startsWith("sms:")) {
+                            try {
+                                val intent = Intent(Intent.ACTION_SENDTO, Uri.parse(url))
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                onWebViewEvent("error", "Could not open SMS app: ${e.message}")
+                            }
+                            return true
+                        }
+                        
+                        // 处理邮件链接
+                        if (url.startsWith("mailto:")) {
+                            try {
+                                val intent = Intent(Intent.ACTION_SENDTO, Uri.parse(url))
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                onWebViewEvent("error", "Could not open email app: ${e.message}")
+                            }
+                            return true
+                        }
+                        
+                        // 检查是否为本地asset文件请求，并进行安全性验证
+                        if (url.startsWith("file:///android_asset/")) {
+                            // 防止路径遍历攻击，确保路径不包含 "../" 等危险序列
+                            val path = request?.url?.path ?: ""
+                            if (!path.contains("../") && !path.contains("..\\\\")) {
+                                // 允许在WebView内部加载本地asset文件
+                                return false
                             }
                         }
                         

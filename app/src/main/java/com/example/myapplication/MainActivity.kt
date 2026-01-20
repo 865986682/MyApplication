@@ -115,11 +115,12 @@ class MainActivity : ComponentActivity() {
                                 .fillMaxSize()
                                 .padding(innerPadding)
                         ) {
-                            Spacer(modifier = Modifier.height(16.dp))
+//                            Spacer(modifier = Modifier.height(16.dp))
                             
                             // WebView组件 - 显示H5页面
                             H5PageWebView(
-                                localAssetFileName = "local_page.html", // 加载本地页面
+                                url = "http://192.168.130.90:8080",
+//                                localAssetFileName = "local_page.html", // 加载本地页面
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxWidth(),
