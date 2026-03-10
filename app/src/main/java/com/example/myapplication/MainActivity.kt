@@ -1,6 +1,8 @@
 package com.example.myapplication
 
 import android.content.Intent
+import android.nfc.NfcAdapter
+import android.nfc.Tag
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
@@ -55,6 +57,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var qrCodeScannerManager: QRCodeScannerManager
     private var nfcStatusCallback: ((String) -> Unit)? = null
     private var webViewRef: android.webkit.WebView? = null
+    private var nfcDataToWrite: String? = null  // 存储要写入 NFC 的数据
     
     /**
      * Activity创建时的初始化方法
@@ -162,16 +165,27 @@ class MainActivity : ComponentActivity() {
                                                         bannerVisible = true
                                                     }
                                                     "trigger_nfc_scan" -> {
-                                                        // 处理来自H5页面的NFC扫描请求
+                                                        // 处理来自 H5 页面的 NFC 扫描请求
                                                         if (nfcManager.isNFCAvailable()) {
-                                                            nfcStatus = "H5页面请求：请将手机靠近NFC标签 (5秒后自动停止)"
+                                                            nfcStatus = "H5 页面请求：请将手机靠近 NFC 标签 (5 秒后自动停止)"
                                                             nfcManager.enableNFCForegroundDispatchWithTimeout(5000)
                                                         } else {
-                                                            nfcStatus = "设备不支持NFC或NFC未启用"
+                                                            nfcStatus = "设备不支持 NFC 或 NFC 未启用"
+                                                        }
+                                                    }
+                                                    "trigger_nfc_write" -> {
+                                                        // 处理来自 H5 页面的 NFC 写入请求
+                                                        if (nfcManager.isNFCAvailable()) {
+                                                            // 保存要写入的数据
+                                                            nfcDataToWrite = dataMap["data"]
+                                                            nfcStatus = "H5 页面请求：请将手机靠近 NFC 标签以写入数据 (5 秒后自动停止)"
+                                                            nfcManager.enableNFCForegroundDispatchWithTimeout(5000)
+                                                        } else {
+                                                            nfcStatus = "设备不支持 NFC 或 NFC 未启用"
                                                         }
                                                     }
                                                     "trigger_camera" -> {
-                                                        // 处理来自H5页面的摄像头请求
+                                                        // 处理来自 H5 页面的摄像头请求
                                                         cameraManager.captureImage()
                                                     }
                                                     "scan_qr_code" -> {
@@ -271,21 +285,64 @@ class MainActivity : ComponentActivity() {
     }
     
     /**
-     * 处理NFC新意图，接收NFC标签数据
+     * 处理 NFC 新意图，接收 NFC 标签数据
      */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        
+        // 处理 NFC 读取
         nfcManager.handleNfcIntent(intent) { nfcData ->
-            // 通过回调更新NFC状态
-            nfcStatusCallback?.invoke("读取到NFC数据: $nfcData")
+            // 通过回调更新 NFC 状态
+            nfcStatusCallback?.invoke("读取到 NFC 数据：$nfcData")
             
             // 可以在这里显示通知或执行其他操作
             if (nfcData.isNotEmpty()) {
                 NotificationHelper.showHeadsUpNotification(
                     this@MainActivity,
-                    "NFC数据读取成功",
-                    "读取到数据: ${nfcData.take(30)}${if (nfcData.length > 30) "..." else ""}"
+                    "NFC 数据读取成功",
+                    "读取到数据：${nfcData.take(30)}${if (nfcData.length > 30) "..." else ""}"
                 )
+            }
+        }
+        
+        // 处理 NFC 写入（如果需要写入功能）
+        handleNFCWrite(intent)
+    }
+    
+    /**
+     * 处理 NFC 写入功能
+     * 这个方法展示了如何向 NFC 标签写入数据
+     */
+    private fun handleNFCWrite(intent: Intent) {
+        val action = intent.action
+        if (action == NfcAdapter.ACTION_TAG_DISCOVERED ||
+            action == NfcAdapter.ACTION_NDEF_DISCOVERED ||
+            action == NfcAdapter.ACTION_TECH_DISCOVERED) {
+            
+            val tag = intent.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG)
+            if (tag != null && nfcDataToWrite != null) {
+                // 执行写入操作
+                val writeSuccess = nfcManager.writeNFCData(tag, nfcDataToWrite!!)
+                
+                runOnUiThread {
+                    if (writeSuccess) {
+                        nfcStatusCallback?.invoke("NFC 写入成功：${nfcDataToWrite}")
+                        NotificationHelper.showHeadsUpNotification(
+                            this@MainActivity,
+                            "NFC 写入成功",
+                            "已成功写入数据：${nfcDataToWrite}"
+                        )
+                    } else {
+                        nfcStatusCallback?.invoke("NFC 写入失败")
+                        NotificationHelper.showHeadsUpNotification(
+                            this@MainActivity,
+                            "NFC 写入失败",
+                            "无法写入数据到 NFC 标签"
+                        )
+                    }
+                    // 清空待写入的数据
+                    nfcDataToWrite = null
+                }
             }
         }
     }

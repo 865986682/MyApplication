@@ -59,7 +59,7 @@ dependencies {
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
     implementation("com.google.zxing:core:3.5.3")
 
-    // 添加AppCompat支持
+    // 添加 AppCompat 支持
     implementation("androidx.appcompat:appcompat:1.7.0")
 
     testImplementation(libs.junit)
