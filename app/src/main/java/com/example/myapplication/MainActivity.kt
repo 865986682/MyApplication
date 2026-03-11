@@ -119,7 +119,7 @@ class MainActivity : ComponentActivity() {
                             
                             // WebView组件 - 显示H5页面
                             H5PageWebView(
-                                url = "http://192.168.130.90:8080",
+                                url = "http://192.168.121.199:8080",
 //                                localAssetFileName = "local_page.html", // 加载本地页面
                                 modifier = Modifier
                                     .weight(1f)
