@@ -293,8 +293,18 @@ class MainActivity : ComponentActivity() {
         // 处理 NFC 读取
         nfcManager.handleNfcIntent(intent) { nfcData ->
             // 通过回调更新 NFC 状态
-            nfcStatusCallback?.invoke("读取到 NFC 数据：$nfcData")
-            
+            nfcStatusCallback?.invoke("读取到NFC数据：$nfcData")
+                    
+            // 通知 H5 页面显示读取到的数据
+            runOnUiThread {
+                webViewRef?.post {
+                    webViewRef?.evaluateJavascript(
+                        "javascript:receiveNFCData('${nfcData.replace("'", "\\\'")}')",
+                        null
+                    )
+                }
+            }
+                    
             // 可以在这里显示通知或执行其他操作
             if (nfcData.isNotEmpty()) {
                 NotificationHelper.showHeadsUpNotification(

@@ -140,6 +140,8 @@
         <h3>NFC 功能测试</h3>
         <button onclick="triggerNFCScan()">触发 NFC 扫描</button>
         <button onclick="triggerNFCWrite()">NFC 写入</button>
+        <div id="nfcResult"
+             style="margin-top: 10px; padding: 10px; background: #e8f4fd; display: none;"></div>
     </div>
 
     <div class="section">
@@ -295,6 +297,30 @@
         } else {
             alert('此功能仅在 Android 应用中可用');
         }
+    }
+
+    // 显示 NFC 读取结果的函数
+    function showNFCResult(message) {
+        const resultDiv = document.getElementById('nfcResult');
+        resultDiv.innerHTML = `<p><strong>NFC 数据：</strong>${message}</p>`;
+        resultDiv.style.display = 'block';
+
+        // 5 秒后自动隐藏结果
+        setTimeout(() => {
+            resultDiv.style.display = 'none';
+        }, 5000);
+    }
+
+    // 从 Android 接收 NFC 数据的函数
+    function receiveNFCData(data) {
+        const resultDiv = document.getElementById('nfcResult');
+        resultDiv.innerHTML = `<p><strong>读取到的NFC数据：</strong>${data}</p>`;
+        resultDiv.style.display = 'block';
+
+        // 5 秒后自动隐藏结果
+        setTimeout(() => {
+            resultDiv.style.display = 'none';
+        }, 5000);
     }
 
     // 获取 NFC 写入的用户输入
