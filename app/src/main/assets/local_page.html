@@ -138,7 +138,7 @@
 
     <div class="section">
         <h3>NFC 功能测试</h3>
-        <button onclick="triggerNFCScan()">触发 NFC 扫描</button>
+        <button onclick="triggerNFCScan().then(data => alert('扫描成功：' + data)).catch(err => alert('失败：' + err))">触发 NFC 扫描</button>
         <button onclick="triggerNFCWrite()">NFC 写入</button>
         <div id="nfcResult"
              style="margin-top: 10px; padding: 10px; background: #e8f4fd; display: none;"></div>
@@ -283,40 +283,60 @@
         }, 5000);
     }
 
-    // 触发 NFC 扫描的函数
+    // 存储 NFC 扫描的回调函数
+    let nfcScanCallback = null;
+    
+    // 触发 NFC 扫描并同步获取结果
     function triggerNFCScan() {
-        // 发送 NFC 扫描请求到 Android 应用
-        if (typeof AndroidInterface !== 'undefined' && AndroidInterface.onCustomEvent) {
-            const nfcData = {
-                action: 'trigger_nfc_scan',
-                message: '请求启动 NFC 扫描'
+        return new Promise((resolve, reject) => {
+            // 设置超时时间（10 秒）
+            const timeoutId = setTimeout(() => {
+                if (nfcScanCallback) {
+                    reject('NFC 扫描超时');
+                    nfcScanCallback = null;
+                }
+            }, 10000);
+                
+            // 存储回调函数
+            nfcScanCallback = {
+                resolve: (data) => {
+                    clearTimeout(timeoutId);
+                    resolve(data);
+                },
+                reject: (error) => {
+                    clearTimeout(timeoutId);
+                    reject(error);
+                }
             };
-
-            AndroidInterface.onCustomEvent('custom', JSON.stringify(nfcData));
-            showResult('NFC 扫描请求已发送');
-        } else {
-            alert('此功能仅在 Android 应用中可用');
-        }
+                
+            // 发送 NFC 扫描请求到 Android 应用
+            if (typeof AndroidInterface !== 'undefined' && AndroidInterface.onCustomEvent) {
+                const nfcData = {
+                    action: 'trigger_nfc_scan',
+                    message: '请求启动 NFC 扫描'
+                };
+    
+                AndroidInterface.onCustomEvent('custom', JSON.stringify(nfcData));
+                showResult('NFC 扫描请求已发送，请靠近 NFC 标签...');
+            } else {
+                reject('此功能仅在 Android 应用中可用');
+            }
+        });
     }
-
-    // 显示 NFC 读取结果的函数
-    function showNFCResult(message) {
-        const resultDiv = document.getElementById('nfcResult');
-        resultDiv.innerHTML = `<p><strong>NFC 数据：</strong>${message}</p>`;
-        resultDiv.style.display = 'block';
-
-        // 5 秒后自动隐藏结果
-        setTimeout(() => {
-            resultDiv.style.display = 'none';
-        }, 5000);
-    }
-
+    
     // 从 Android 接收 NFC 数据的函数
     function receiveNFCData(data) {
         const resultDiv = document.getElementById('nfcResult');
-        resultDiv.innerHTML = `<p><strong>读取到的NFC数据：</strong>${data}</p>`;
+            
+        // 如果有待处理的回调，先调用它
+        if (nfcScanCallback) {
+            nfcScanCallback.resolve(data);
+            nfcScanCallback = null;
+        }
+            
+        resultDiv.innerHTML = `<p><strong>读取到的 NFC 数据：</strong>${data}</p>`;
         resultDiv.style.display = 'block';
-
+    
         // 5 秒后自动隐藏结果
         setTimeout(() => {
             resultDiv.style.display = 'none';
