@@ -297,26 +297,42 @@
         }
     }
 
-    // 触发 NFC 写入的函数
-    function triggerNFCWrite() {
-        // 获取要写入的内容
+    // 获取 NFC 写入的用户输入
+    function getNFCWriteInput() {
         const contentToWrite = prompt("请输入要写入 NFC 标签的内容:", "Hello NFC!");
         
         if (contentToWrite !== null && contentToWrite.trim() !== '') {
-            // 发送 NFC 写入请求到 Android 应用
-            if (typeof AndroidInterface !== 'undefined' && AndroidInterface.onCustomEvent) {
-                const nfcWriteData = {
-                    action: 'trigger_nfc_write',
-                    data: contentToWrite.trim()
-                };
-
-                AndroidInterface.onCustomEvent('custom', JSON.stringify(nfcWriteData));
-                showResult(`NFC 写入请求已发送，内容：${contentToWrite}`);
-            } else {
-                alert('此功能仅在 Android 应用中可用');
-            }
+            return contentToWrite.trim();
         } else if (contentToWrite !== null) {
             alert('写入内容不能为空！');
+            return null;
+        }
+        return null; // 用户取消输入
+    }
+
+    // 发送 NFC 写入请求到 Android 应用
+    function sendNFCWriteRequest(content) {
+        if (typeof AndroidInterface !== 'undefined' && AndroidInterface.onCustomEvent) {
+            const nfcWriteData = {
+                action: 'trigger_nfc_write',
+                data: content
+            };
+
+            AndroidInterface.onCustomEvent('custom', JSON.stringify(nfcWriteData));
+            showResult(`NFC 写入请求已发送，内容：${content}`);
+        } else {
+            alert('此功能仅在 Android 应用中可用');
+        }
+    }
+
+    // 触发 NFC 写入的函数（组合以上两个方法）
+    function triggerNFCWrite() {
+        // 步骤 1：获取用户输入
+        const content = getNFCWriteInput();
+        
+        // 步骤 2：如果输入有效，发送写入请求
+        if (content !== null) {
+            sendNFCWriteRequest(content);
         }
     }
 
