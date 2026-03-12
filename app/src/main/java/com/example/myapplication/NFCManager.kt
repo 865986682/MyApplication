@@ -19,6 +19,11 @@ class NFCManager(private val activity: Activity) {
     private var intentFilters: Array<IntentFilter>? = null
     private var nfcTimeoutHandler: Handler? = null
     private var nfcTimeoutRunnable: Runnable? = null
+    
+    // NFC 写入相关的超时和取消控制
+    private var writeOperationHandler: Handler? = null
+    private var writeOperationRunnable: Runnable? = null
+    private var isWriteOperationInProgress: Boolean = false
 
     init {
         nfcAdapter = NfcAdapter.getDefaultAdapter(activity)
@@ -94,6 +99,109 @@ class NFCManager(private val activity: Activity) {
                     onNfcDataReceived(nfcData)
                 }
             }
+        }
+    }
+
+    /**
+     * 处理 NFC 写入意图，等待写入结果返回（带超时机制）
+     * @param intent NFC 意图
+     * @param dataToWrite 要写入的数据
+     * @param timeoutMs 超时时间（毫秒），默认 8000ms
+     * @param onWriteResult 写入结果回调，true 表示成功，false 表示失败
+     */
+    fun handleNfcWriteIntent(
+        intent: Intent, 
+        dataToWrite: String, 
+        timeoutMs: Long = 8000,
+        onWriteResult: (Boolean) -> Unit
+    ) {
+        // 如果已有写入操作在进行中，直接返回失败
+        if (isWriteOperationInProgress) {
+            onWriteResult(false)
+            return
+        }
+        
+        val action = intent.action
+        if (action == NfcAdapter.ACTION_TAG_DISCOVERED ||
+            action == NfcAdapter.ACTION_NDEF_DISCOVERED ||
+            action == NfcAdapter.ACTION_TECH_DISCOVERED) {
+            
+            val tag = intent.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG)
+            if (tag != null) {
+                // 标记写入操作进行中
+                isWriteOperationInProgress = true
+                
+                // 设置超时任务
+                setupWriteTimeout(timeoutMs) { timedOut ->
+                    if (timedOut) {
+                        // 超时发生，返回失败
+                        isWriteOperationInProgress = false
+                        onWriteResult(false)
+                    }
+                }
+                
+                // 执行写入操作并等待结果
+                try {
+                    val writeSuccess = writeNFCData(tag, dataToWrite)
+                    // 取消超时任务
+                    cancelWriteTimeout()
+                    // 标记操作完成
+                    isWriteOperationInProgress = false
+                    onWriteResult(writeSuccess)
+                } catch (e: Exception) {
+                    // 发生异常，取消超时并返回失败
+                    cancelWriteTimeout()
+                    isWriteOperationInProgress = false
+                    e.printStackTrace()
+                    onWriteResult(false)
+                }
+            } else {
+                onWriteResult(false)
+            }
+        } else {
+            onWriteResult(false)
+        }
+    }
+    
+    /**
+     * 设置写入操作的超时机制
+     * @param timeoutMs 超时时间（毫秒）
+     * @param onTimeout 超时回调
+     */
+    private fun setupWriteTimeout(timeoutMs: Long, onTimeout: (Boolean) -> Unit) {
+        // 清除之前的超时任务
+        cancelWriteTimeout()
+        
+        // 创建新的超时任务
+        writeOperationHandler = Handler(Looper.getMainLooper())
+        writeOperationRunnable = Runnable {
+            // 超时发生
+            isWriteOperationInProgress = false
+            onTimeout(true)
+        }
+        writeOperationHandler?.postDelayed(writeOperationRunnable!!, timeoutMs)
+    }
+    
+    /**
+     * 取消写入操作的超时任务
+     */
+    private fun cancelWriteTimeout() {
+        writeOperationRunnable?.let {
+            writeOperationHandler?.removeCallbacks(it)
+        }
+        writeOperationRunnable = null
+        writeOperationHandler = null
+    }
+    
+    /**
+     * 取消正在进行的 NFC 写入操作
+     */
+    fun cancelNfcWriteOperation() {
+        if (isWriteOperationInProgress) {
+            // 取消超时任务
+            cancelWriteTimeout()
+            // 标记操作已完成
+            isWriteOperationInProgress = false
         }
     }
 
