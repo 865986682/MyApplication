@@ -1,14 +1,18 @@
 package com.example.myapplication
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.nfc.NfcAdapter
 import android.nfc.Tag
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -44,6 +48,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import kotlinx.coroutines.delay
 
@@ -331,27 +336,48 @@ class MainActivity : ComponentActivity() {
             
             val tag = intent.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG)
             if (tag != null && nfcDataToWrite != null) {
-                // 执行写入操作
-                val writeSuccess = nfcManager.writeNFCData(tag, nfcDataToWrite!!)
-                
-                runOnUiThread {
-                    if (writeSuccess) {
-                        nfcStatusCallback?.invoke("NFC 写入成功：${nfcDataToWrite}")
-                        NotificationHelper.showHeadsUpNotification(
-                            this@MainActivity,
-                            "NFC 写入成功",
-                            "已成功写入数据：${nfcDataToWrite}"
-                        )
-                    } else {
-                        nfcStatusCallback?.invoke("NFC 写入失败")
-                        NotificationHelper.showHeadsUpNotification(
-                            this@MainActivity,
-                            "NFC 写入失败",
-                            "无法写入数据到 NFC 标签"
-                        )
+                // 使用新的异步方法，等待写入结果返回（带超时机制）
+                nfcManager.handleNfcWriteIntent(intent, nfcDataToWrite!!, timeoutMs = 8000) { writeSuccess ->
+                    runOnUiThread {
+                        val dataToWrite = nfcDataToWrite
+                        if (writeSuccess) {
+                            nfcStatusCallback?.invoke("NFC 写入成功：${dataToWrite}")
+                            NotificationHelper.showHeadsUpNotification(
+                                this@MainActivity,
+                                "NFC 写入成功",
+                                "已成功写入数据：${dataToWrite}"
+                            )
+                            // 通知 H5 页面写入成功，触发 Promise resolve
+                            webViewRef?.post {
+                                webViewRef?.evaluateJavascript(
+                                    "javascript:receiveNFCWriteResult(true, '${dataToWrite?.replace("'", "\\\'")}')",
+                                    null
+                                )
+                            }
+                        } else {
+                            // 检查是否是因为超时而失败
+                            val failureMessage = if (!nfcManager.isNFCAvailable()) {
+                                "NFC 不可用或已关闭"
+                            } else {
+                                "写入超时或失败，请重试"
+                            }
+                            nfcStatusCallback?.invoke(failureMessage)
+                            NotificationHelper.showHeadsUpNotification(
+                                this@MainActivity,
+                                "NFC 写入失败",
+                                failureMessage
+                            )
+                            // 通知 H5 页面写入失败，触发 Promise reject
+                            webViewRef?.post {
+                                webViewRef?.evaluateJavascript(
+                                    "javascript:receiveNFCWriteResult(false, '${failureMessage.replace("'", "\\\'")}')",
+                                    null
+                                )
+                            }
+                        }
+                        // 清空待写入的数据
+                        nfcDataToWrite = null
                     }
-                    // 清空待写入的数据
-                    nfcDataToWrite = null
                 }
             }
         }
