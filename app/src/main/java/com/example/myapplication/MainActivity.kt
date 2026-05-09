@@ -77,6 +77,10 @@ class MainActivity : ComponentActivity() {
         NotificationHelper.createNotificationChannel(this)
         
         enableEdgeToEdge()
+        
+        // 检查是否是通过NFC启动的
+        handleNfcIntentOnCreate(intent)
+        
         setContent {
             var showDialog by remember { mutableStateOf(false) }
             var dialogTitle by remember { mutableStateOf("") }
@@ -271,6 +275,51 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+    
+    /**
+     * 处理Activity创建时的NFC意图（应用从冷启动或后台被NFC唤醒）
+     * 
+     * 用途：当用户扫描NFC标签时，如果应用未启动或在后台，系统会通过Intent启动或恢复应用。
+     * 这个方法在onCreate中调用，用于处理这种场景下的NFC数据读取。
+     * 
+     * 工作流程：
+     * 1. 检查启动Intent是否来自NFC扫描（TAG_DISCOVERED/NDEF_DISCOVERED/TECH_DISCOVERED）
+     * 2. 延迟500ms等待UI初始化完成（因为此时WebView可能还未创建）
+     * 3. 通过NFCManager读取NFC标签数据
+     * 4. 更新UI状态并通知H5页面
+     * 
+     * @param intent Activity的启动Intent，可能包含NFC标签信息
+     */
+    private fun handleNfcIntentOnCreate(intent: Intent) {
+        val action = intent.action
+        // 判断是否是NFC相关的Intent动作
+        if (action == NfcAdapter.ACTION_TAG_DISCOVERED ||
+            action == NfcAdapter.ACTION_NDEF_DISCOVERED ||
+            action == NfcAdapter.ACTION_TECH_DISCOVERED) {
+            
+            // 延迟处理，等待UI初始化完成
+            // 原因：onCreate时WebView还未创建，需要等待setContent执行完毕
+            Handler(mainLooper).postDelayed({
+                // 调用NFCManager处理NFC Intent，读取标签数据
+                nfcManager.handleNfcIntent(intent) { nfcData ->
+                    runOnUiThread {
+                        // 更新NFC状态显示，提示用户NFC已自动触发
+                        nfcStatusCallback?.invoke("NFC自动触发，读取到数据：$nfcData")
+                        
+                        // 通知H5页面，将NFC数据传递给网页中的JavaScript函数
+                        webViewRef?.post {
+                            // 调用H5页面的receiveNFCData函数，传递读取到的数据
+                            // 注意：需要对单引号进行转义，避免JavaScript语法错误
+                            webViewRef?.evaluateJavascript(
+                                "javascript:receiveNFCData('${nfcData.replace("'", "\\\\'")}')",
+                                null
+                            )
+                        }
+                    }
+                }
+            }, 500)  // 延迟500毫秒，确保UI已完全初始化
         }
     }
     

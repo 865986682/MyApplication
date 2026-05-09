@@ -40,20 +40,69 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- NFC Intent Filters -->
+            <!-- ==================== NFC Intent Filters 配置说明 ==================== -->
+            <!-- 
+                以下配置用于实现NFC自动启动应用功能。
+                Android系统会根据NFC标签中的数据类型，匹配合适的应用来处理。
+                优先级从高到低：NDEF_DISCOVERED > TAG_DISCOVERED > TECH_DISCOVERED
+            -->
+            
+            <!-- 
+                1. NDEF_DISCOVERED - 应用URI协议（最高优先级）
+                用途：当NFC标签包含 "android-app://com.example.myapplication" 这样的URI时，
+                     系统会自动启动或切换到本应用。
+                场景：专门用于创建应用启动标签，扫描后直接打开应用。
+            -->
             <intent-filter>
                 <action android:name="android.nfc.action.NDEF_DISCOVERED" />
                 <category android:name="android.intent.category.DEFAULT" />
+                <!-- 匹配 android-app://com.example.myapplication 格式的URI -->
+                <data android:scheme="android-app" android:host="com.example.myapplication" />
+            </intent-filter>
+            
+            <!-- 
+                2. NDEF_DISCOVERED - 纯文本数据
+                用途：当NFC标签包含普通文本数据时，本应用可以接收并处理。
+                场景：读取包含URL、文本信息等的NFC标签。
+                注意：如果多个应用都注册了text/plain，系统会显示选择器让用户选择。
+            -->
+            <intent-filter>
+                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <!-- 匹配 MIME 类型为 text/plain 的NDEF消息 -->
                 <data android:mimeType="text/plain" />
             </intent-filter>
+            
+            <!-- 
+                3. TAG_DISCOVERED - 通用标签发现（较低优先级）
+                用途：当扫描到任何NFC标签，但不符合上述NDEF格式时触发。
+                场景：作为后备方案，确保能捕获所有类型的NFC标签。
+                注意：这是最低优先级的NFC intent，只有当没有更具体的filter匹配时才会使用。
+            -->
             <intent-filter>
                 <action android:name="android.nfc.action.TAG_DISCOVERED" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+            
+            <!-- 
+                4. TECH_DISCOVERED - 特定技术类型
+                用途：根据NFC标签的技术类型（如Ndef、NfcA、MifareClassic等）进行匹配。
+                场景：需要处理特定类型NFC标签的高级应用。
+                注意：需要在 res/xml/nfc_tech_filter.xml 中声明支持的技术类型列表。
+            -->
             <intent-filter>
                 <action android:name="android.nfc.action.TECH_DISCOVERED" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
 
+            <!-- 
+                TECH_DISCOVERED 的技术类型配置文件
+                定义了本应用支持的NFC技术类型，包括：
+                - Ndef: 已格式化的NDEF标签
+                - NfcA/NfcB/NfcF/NfcV: 不同标准的NFC技术
+                - NdefFormatable: 未格式化的标签
+                - MifareClassic/MifareUltralight: Mifare系列标签
+            -->
             <meta-data
                 android:name="android.nfc.action.TECH_DISCOVERED"
                 android:resource="@xml/nfc_tech_filter" />

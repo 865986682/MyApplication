@@ -384,4 +384,60 @@ class NFCManager(private val activity: Activity) {
             payload
         )
     }
+    
+    /**
+     * 创建包含应用URI的NDEF记录，用于点击后自动打开应用
+     * 
+     * 用途：生成一个特殊的NDEF消息，写入NFC标签后，当用户扫描该标签时，
+     * Android系统会识别出这是指向特定应用的URI，从而自动启动或切换到该应用。
+     * 
+     * 工作原理：
+     * 1. 使用 "android-app://" 协议格式创建URI，例如：android-app://com.example.myapplication
+     * 2. 这种格式是Android系统标准的深度链接（Deep Link）格式
+     * 3. 在AndroidManifest.xml中配置对应的intent-filter来接收这种URI
+     * 4. 当扫描到包含此URI的NFC标签时，系统会自动匹配并启动对应的应用
+     * 
+     * 使用场景：
+     * - 创建专用的应用启动标签，贴在特定位置
+     * - 实现快速启动功能，如签到、打卡等
+     * - 减少用户操作步骤，提升体验
+     * 
+     * @param packageName 应用包名，默认为当前应用的包名
+     *                    例如："com.example.myapplication"
+     * @param data 附加数据，可选，可以携带一些额外信息
+     *              例如："auto_launch"、"check_in" 等标识符
+     * @return NdefMessage 包含应用URI的NDEF消息对象，可写入NFC标签
+     * 
+     * 示例用法：
+     * ```kotlin
+     * // 创建默认的启动消息（使用当前应用包名）
+     * val message = nfcManager.createAppLaunchNdefMessage()
+     * 
+     * // 创建带自定义数据的启动消息
+     * val message = nfcManager.createAppLaunchNdefMessage(
+     *     packageName = "com.example.myapplication",
+     *     data = "quick_start"
+     * )
+     * 
+     * // 将消息写入NFC标签
+     * nfcManager.writeNFCData(tag, message)
+     * ```
+     */
+    fun createAppLaunchNdefMessage(packageName: String = activity.packageName, data: String = ""): NdefMessage {
+        // 构造Android应用URI，格式为：android-app://<package_name>
+        // 这是Android系统识别应用深度链接的标准格式
+        val uri = "android-app://$packageName"
+        
+        // 创建URI类型的NDEF记录
+        // TNF_ABSOLUTE_URI 表示这是一个绝对URI记录
+        val uriRecord = NdefRecord(
+            NdefRecord.TNF_ABSOLUTE_URI,  // 类型名称格式：绝对URI
+            uri.toByteArray(Charset.forName("US-ASCII")),  // URI数据（使用ASCII编码）
+            ByteArray(0),  // ID字段为空
+            data.toByteArray(Charset.forName("UTF-8"))  // 负载数据（附加信息，使用UTF-8编码）
+        )
+        
+        // 将NDEF记录封装成NDEF消息返回
+        return NdefMessage(arrayOf(uriRecord))
+    }
 }
