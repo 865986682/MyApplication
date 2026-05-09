@@ -127,7 +127,8 @@ class MainActivity : ComponentActivity() {
                             
                             // WebView组件 - 显示H5页面
                             H5PageWebView(
-                                url = "http://192.168.121.199:8080",
+                                url = "http://203.86.123.106:32005/yax/#/",
+                                // url = "http://192.168.121.199:8080",
 //                                localAssetFileName = "local_page.html", // 加载本地页面
                                 modifier = Modifier
                                     .weight(1f)
@@ -313,11 +314,11 @@ class MainActivity : ComponentActivity() {
                     
             // 可以在这里显示通知或执行其他操作
             if (nfcData.isNotEmpty()) {
-                NotificationHelper.showHeadsUpNotification(
-                    this@MainActivity,
-                    "NFC 数据读取成功",
-                    "读取到数据：${nfcData.take(30)}${if (nfcData.length > 30) "..." else ""}"
-                )
+                //NotificationHelper.showHeadsUpNotification(
+                //    this@MainActivity,
+                //    "NFC 数据读取成功",
+                //    "读取到数据：${nfcData.take(30)}${if (nfcData.length > 30) "..." else ""}"
+                //)
             }
         }
         
@@ -343,11 +344,11 @@ class MainActivity : ComponentActivity() {
                         val dataToWrite = nfcDataToWrite
                         if (writeSuccess) {
                             nfcStatusCallback?.invoke("NFC 写入成功：${dataToWrite}")
-                            NotificationHelper.showHeadsUpNotification(
-                                this@MainActivity,
-                                "NFC 写入成功",
-                                "已成功写入数据：${dataToWrite}"
-                            )
+                            //NotificationHelper.showHeadsUpNotification(
+                            //    this@MainActivity,
+                            //    "NFC 写入成功",
+                            //    "已成功写入数据：${dataToWrite}"
+                            //)
                             // 通知 H5 页面写入成功，触发 Promise resolve
                             webViewRef?.post {
                                 webViewRef?.evaluateJavascript(
@@ -363,11 +364,11 @@ class MainActivity : ComponentActivity() {
                                 "写入超时或失败，请重试"
                             }
                             nfcStatusCallback?.invoke(failureMessage)
-                            NotificationHelper.showHeadsUpNotification(
-                                this@MainActivity,
-                                "NFC 写入失败",
-                                failureMessage
-                            )
+                            //NotificationHelper.showHeadsUpNotification(
+                            //    this@MainActivity,
+                            //    "NFC 写入失败",
+                            //    failureMessage
+                            //)
                             // 通知 H5 页面写入失败，触发 Promise reject
                             webViewRef?.post {
                                 webViewRef?.evaluateJavascript(
@@ -440,11 +441,11 @@ class MainActivity : ComponentActivity() {
                 // 将图片数据传递给WebView
                 runOnUiThread {
                     // 发送通知
-                    NotificationHelper.showHeadsUpNotification(
-                        this@MainActivity,
-                        "拍照成功",
-                        "照片已拍摄，数据已传递给H5页面"
-                    )
+                    // NotificationHelper.showHeadsUpNotification(
+                    //    this@MainActivity,
+                    //    "拍照成功",
+                    //    "照片已拍摄，数据已传递给H5页面"
+                    //)
                     
                     // 使用延迟机制确保WebView引用已设置
                     Handler(mainLooper).postDelayed({
